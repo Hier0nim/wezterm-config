@@ -1,144 +1,45 @@
 -- Pull in the wezterm API
-local wezterm = require("wezterm")
+local wez = require("wezterm")
+
+local utils = require("lua/utils")
+local appearance = require("lua/appearance")
+local mappings = require("lua/keymappings")
+
+local bar = wez.plugin.require("https://github.com/adriankarlen/bar.wezterm")
 
 -- This table will hold the configuration.
-local config = {}
+local c = {}
 
 -- In newer versions of wezterm, use the config_builder which will
 -- help provide clearer error messages
-if wezterm.config_builder then
-	config = wezterm.config_builder()
+if wez.config_builder then
+	c = wez.config_builder()
 end
 
-config.default_prog = { "pwsh", "-NoLogo" }
-
--- For example, changing the color scheme:
-config.color_scheme = "Catppuccin Macchiato"
-config.font = wezterm.font("JetBrains Mono", { weight = "Medium" })
-config.font_size = 12.5
-
-config.window_decorations = "RESIZE"
-
-wezterm.on("update-status", function(window, pane)
-	if pane:is_alt_screen_active() then
-		window:set_config_overrides({
-			window_padding = { left = 0, right = 0, top = 0, bottom = 0 },
-		})
-	else
-		window:set_config_overrides({
-			window_padding = { left = "1cell", right = "1cell", top = "0.5cell", bottom = "0.5cell" },
-		})
-	end
-end)
-
--- tmux
-config.leader = { key = "b", mods = "CTRL", timeout_milliseconds = 2000 }
-config.keys = {
+-- General configurations
+c.font = wez.font("JetBrains Mono", { weight = "Medium" })
+c.font_rules = {
 	{
-		mods = "LEADER",
-		key = "c",
-		action = wezterm.action.SpawnTab("CurrentPaneDomain"),
-	},
-	{
-		mods = "LEADER",
-		key = "x",
-		action = wezterm.action.CloseCurrentPane({ confirm = true }),
-	},
-	{
-		mods = "LEADER",
-		key = "b",
-		action = wezterm.action.ActivateTabRelative(-1),
-	},
-	{
-		mods = "LEADER",
-		key = "n",
-		action = wezterm.action.ActivateTabRelative(1),
-	},
-	{
-		mods = "LEADER",
-		key = "h",
-		action = wezterm.action.SplitHorizontal({ domain = "CurrentPaneDomain" }),
-	},
-	{
-		mods = "LEADER",
-		key = "v",
-		action = wezterm.action.SplitVertical({ domain = "CurrentPaneDomain" }),
-	},
-	{
-		mods = "LEADER",
-		key = "j",
-		action = wezterm.action.ActivatePaneDirection("Left"),
-	},
-	{
-		mods = "LEADER",
-		key = "k",
-		action = wezterm.action.ActivatePaneDirection("Down"),
-	},
-	{
-		mods = "LEADER",
-		key = "l",
-		action = wezterm.action.ActivatePaneDirection("Up"),
-	},
-	{
-		mods = "LEADER",
-		key = ";",
-		action = wezterm.action.ActivatePaneDirection("Right"),
-	},
-	{
-		mods = "LEADER",
-		key = "LeftArrow",
-		action = wezterm.action.AdjustPaneSize({ "Left", 5 }),
-	},
-	{
-		mods = "LEADER",
-		key = "RightArrow",
-		action = wezterm.action.AdjustPaneSize({ "Right", 5 }),
-	},
-	{
-		mods = "LEADER",
-		key = "DownArrow",
-		action = wezterm.action.AdjustPaneSize({ "Down", 5 }),
-	},
-	{
-		mods = "LEADER",
-		key = "UpArrow",
-		action = wezterm.action.AdjustPaneSize({ "Up", 5 }),
-	},
-	{
-		mods = "LEADER",
-		key = "r",
-		action = wezterm.action.PromptInputLine({
-			description = "Enter new name for tab",
-			action = wezterm.action_callback(function(window, _, line)
-				if line then
-					window:active_tab():set_title(line)
-				end
-			end),
-		}),
+		italic = true,
+		intensity = "Half",
+		font = wez.font("JetBrains Mono", { weight = "Medium", italic = true }),
 	},
 }
+c.font_size = 12
+c.default_prog = utils.is_windows and { "pwsh", "-NoLogo" } or "zsh"
+c.adjust_window_size_when_changing_font_size = false
+c.audible_bell = "Disabled"
+c.scrollback_lines = 3000
+c.default_workspace = "main"
+c.status_update_interval = 2000
 
-for i = 1, 9 do
-	table.insert(config.keys, {
-		key = tostring(i),
-		mods = "LEADER",
-		action = wezterm.action.ActivateTab(i - 1),
-	})
-end
+-- appearance
+appearance.apply_to_config(c)
 
--- tab bar
-config.hide_tab_bar_if_only_one_tab = false
-config.tab_bar_at_bottom = true
-config.use_fancy_tab_bar = false
-config.tab_and_split_indices_are_zero_based = false
-config.show_new_tab_button_in_tab_bar = false
+-- keys
+mappings.apply_to_config(c)
 
-local bar = wezterm.plugin.require("https://github.com/adriankarlen/bar.wezterm")
-bar.apply_to_config(config, {
-	enabled_modules = {
-		username = false,
-		hostname = true,
-		clock = false,
-	},
-})
-return config
+-- bar
+bar.apply_to_config(c, { enabled_modules = { hostname = false } })
+
+return c
