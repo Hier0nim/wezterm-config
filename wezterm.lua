@@ -26,7 +26,7 @@ c.font_rules = {
 	},
 }
 c.font_size = 12
-c.default_prog = utils.is_windows and { "pwsh", "-NoLogo" } or "zsh"
+-- c.default_prog = utils.is_windows and { "pwsh", "-NoLogo" } or "zsh"
 c.adjust_window_size_when_changing_font_size = false
 c.audible_bell = "Disabled"
 c.scrollback_lines = 3000
